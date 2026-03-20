@@ -1,0 +1,29 @@
+name: Update Major Version Tag
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+jobs:
+  update-major-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update major version tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Tag '$TAG' does not match expected semver format vMAJOR.MINOR.PATCH — skipping."
+            exit 0
+          fi
+          MAJOR="${TAG%%.*}"
+          git tag -f "$MAJOR"
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}" "$MAJOR" --force
